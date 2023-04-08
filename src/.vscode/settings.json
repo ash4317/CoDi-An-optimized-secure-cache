@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "sstream": "cpp",
+        "params.h": "c",
+        "externs.h": "c"
+    }
+}
