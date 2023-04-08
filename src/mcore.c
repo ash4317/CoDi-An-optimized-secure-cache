@@ -86,13 +86,12 @@ void mcore_cycle (MCore *c)
       c->access_count++;
       l3outcome = mcache_access(c->l3cache, orig_lineaddr);
       delay+=L3_LATENCY; // incurred on both hit and miss
-
       if( (L3_PERFECT==FALSE) && (l3outcome==MISS)){
-	uns64 memsysdelay;
-	memsysdelay = memsys_access(c->memsys, orig_lineaddr, c->tid, c->cycle+delay);
-	delay+=memsysdelay;
-	mcache_install(c->l3cache,orig_lineaddr); 
-	c->miss_count++;
+        uns64 memsysdelay;
+        memsysdelay = memsys_access(c->memsys, orig_lineaddr, c->tid, c->cycle+delay);
+        delay+=memsysdelay;
+        mcache_install(c->l3cache,orig_lineaddr); 
+        c->miss_count++;
       }
       
       c->delay_count +=  delay;

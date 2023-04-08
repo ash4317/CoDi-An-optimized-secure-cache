@@ -15,19 +15,31 @@ typedef enum MCache_ReplPolicy_Enum {
 } MCache_ReplPolicy;
 
 
-typedef struct MCache_Entry MCache_Entry;
+typedef struct MCache_Line MCache_Line;
 typedef struct MCache MCache;
+typedef struct MCache_Skew MCache_Skew;
+typedef struct PathNode PathNode;
 
 ///////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-struct MCache_Entry {
-    Flag    valid;
-    Flag    dirty;
-    Addr    tag;
+struct MCache_Line {
+    Flag    valid;            // Valid: Line has data, Invalid: Line is empty
+    Flag    dirty;            // Whether line is dirty
+    Addr    tag;              // Tag
     uns     ripctr;
-    uns64   last_access;
+    uns64   last_access;      // Timestamp
     Addr    orig_lineaddr;
+};
+
+/**
+ * MCache_Skew: A skew is a set-associative cache
+*/
+struct MCache_Skew {
+  uns sets;                   // number of sets
+  uns assocs;                 // associativity
+  uns64 key;                  // cryptographic key for this skew
+  MCache_Line *entries;       // cache lines
 };
 
 
@@ -36,12 +48,14 @@ struct MCache{
   uns assocs;
   MCache_ReplPolicy repl_policy; //0:LRU  1:RND 2:SRRIP
   uns index_policy; // how to index cache
+  uns num_skews;
 
   Flag *is_leader_p0; // leader SET for D(RR)IP
   Flag *is_leader_p1; // leader SET for D(RR)IP
   uns psel;
 
-  MCache_Entry *entries;
+  MCache_Line *entries;
+  MCache_Skew *skews;
   uns *fifo_ptr; // for fifo replacement (per set)
   int touched_wayid;
   int touched_setid;
@@ -52,10 +66,16 @@ struct MCache{
   uns64 s_evict; // number of evictions
 };
 
+struct PathNode {
+  MCache_Line *line;
+  struct PathNode *parent;
+};
+
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 
-MCache *mcache_new(uns sets, uns assocs, uns repl );
+MCache *mcache_new(uns skews, uns sets, uns assocs, uns repl);
+// MCache_Skew *mcache_skew_new(uns sets, uns assocs, uns64 key);
 Flag    mcache_access        (MCache *c, Addr addr);
 void    mcache_install       (MCache *c, Addr addr);
 Flag    mcache_probe         (MCache *c, Addr addr);
@@ -64,6 +84,7 @@ Flag    mcache_mark_dirty    (MCache *c, Addr addr);
 uns     mcache_get_index     (MCache *c, Addr addr);
 
 uns     mcache_find_victim   (MCache *c, uns set);
+MCache_Line* mcache_find_victim_skew(MCache *c);
 uns     mcache_find_victim_lru   (MCache *c, uns set);
 uns     mcache_find_victim_rnd   (MCache *c, uns set);
 uns     mcache_find_victim_srrip   (MCache *c, uns set);

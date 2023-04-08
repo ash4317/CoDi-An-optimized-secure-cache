@@ -128,7 +128,7 @@ uns64   dram_service(DRAM *d, Addr lineaddr, DRAM_ReqType type, double num_lineb
   if(act_info){
     act_info->rowID = myrowbufid;
     act_info->bankID = mybankid;
-    act_info->isACT =  (rowbuf_outcome != DRAM_ROWBUF_HIT)? true : false;
+    act_info->isACT =  (rowbuf_outcome != DRAM_ROWBUF_HIT)? 1 : 0;
   }
   return delay;
 }

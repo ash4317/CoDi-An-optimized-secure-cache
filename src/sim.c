@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <time.h>
 
 #include "global_types.h"
 #include "mcore.h"
@@ -85,6 +86,9 @@ int main(int argc, char** argv)
   }
   
   read_params(argc, argv);
+
+  // Initialize the random number generator
+  srand(time(NULL));
   
   //--------------------------------------------------------------------
   // -- Allocate the nest and cores
@@ -92,10 +96,10 @@ int main(int argc, char** argv)
   uns num_os_pages = (1024*(MEM_SIZE_MB-MEM_RSRV_MB))/(OS_PAGESIZE/1024);
   os = os_new(num_os_pages, num_threads);
 
-  uns l3sets = (L3_SIZE_KB*1024)/(L3_ASSOC*LINESIZE);
+  uns l3sets = (L3_SIZE_KB*1024)/(L3_ASSOC*LINESIZE*NUM_SKEWS);
 
   memsys = memsys_new(NUM_THREADS, RH_THRESHOLD_ACT);
-  LLC = mcache_new(l3sets, L3_ASSOC, L3_REPL);
+  LLC = mcache_new(NUM_SKEWS, l3sets, L3_ASSOC, L3_REPL);
 
   for(ii=0; ii<num_threads; ii++){
     mcore[ii] = mcore_new( memsys, os, LLC, addr_trace_filename[ii], ii);

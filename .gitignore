@@ -1,2 +1,5 @@
-src/sim*
+src/*txt
+src/.vscode/
+src/sim
 RESULTS/*
+TRACES/
