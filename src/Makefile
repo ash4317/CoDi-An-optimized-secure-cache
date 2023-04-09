@@ -1,7 +1,7 @@
 RM        := /bin/rm -rf
 SIM       := ./sim
 CC        := g++
-CFLAGS    := -lz -O2 -lm  -W -Wall -Wno-deprecated -Wno-unknown-warning-option -Wno-self-assign -Wno-unused-parameter -Wno-unused-but-set-variable
+CFLAGS    := -O2 -W -Wall -Wno-deprecated -Wno-unknown-warning-option -Wno-self-assign -Wno-unused-parameter -Wno-unused-but-set-variable
 DFLAGS    := -pg -g
 PFLAGS    := -pg
 
@@ -9,7 +9,7 @@ PFLAGS    := -pg
 
 
 all:  folders traces
-	${CC} ${CFLAGS} dram.c  mgries.c cra_ctr.c ctrcache.c scoreboard.c mcore.c os.c  mcache.c sim.c memsys.c  hash_lib.c malloc_lib.c -o ${SIM}
+	${CC} ${CFLAGS} dram.c  mgries.c cra_ctr.c ctrcache.c scoreboard.c mcore.c os.c  mcache.c sim.c memsys.c  hash_lib.c malloc_lib.c -o ${SIM} -lz -lm
 
 folders: 
 	mkdir -p ../RESULTS
