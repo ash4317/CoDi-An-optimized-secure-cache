@@ -1,3 +1,6 @@
-src/sim*
+src/*txt
+src/.vscode/
+src/sim
 RESULTS/*
-TRACES/
+src/copy.sh
+src/test.cpp
