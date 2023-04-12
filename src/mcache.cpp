@@ -13,6 +13,7 @@
 
 uns debug = 0;
 
+using namespace std;
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
@@ -88,8 +89,7 @@ Flag mcache_access(MCache *c, Addr addr)
 {
   Addr tag = addr; // full tags
   // uns set = mcache_get_index(c, addr);
-  if(debug)
-    printf("Accessing addr: %llu, ", addr);
+  if(debug) printf("Accessing addr: %llu, ", addr);
 
   c->s_count++;
   // Flag res = MISS;
@@ -97,18 +97,38 @@ Flag mcache_access(MCache *c, Addr addr)
   // Access all the skews until we get a HIT
   for(uns i = 0; i < c->num_skews; i++) {
     MCache_Skew *skew = &c->skews[i];
-    uns set = line_to_set_mapping(addr, skew->key, skew->sets);
-    uns start = set * skew->assocs;
-    uns end = start + skew->assocs;
 
-    for(uns i = start; i < end; i++) {
+    // get lines from set and set + 1
+    uns set1 = line_to_set_mapping(addr, skew->key, skew->sets);
+    uns start1 = set1 * skew->assocs;
+    uns end1 = start1 + skew->assocs;
+
+    uns set2 = (set1 + 1) % c->skews->sets;
+    uns start2 = set2 * skew->assocs;
+    uns end2 = start2 + skew->assocs;
+
+    for(uns i = start1; i < end1; i++) {
       MCache_Line *entry = &skew->entries[i];
       if(entry->valid && (entry->tag == tag)) {
         // HIT
         entry->last_access = c->s_count;
         entry->ripctr = MCACHE_SRRIP_MAX;
-        c->touched_wayid = (i - start);
-        c->touched_setid = set;
+        c->touched_wayid = (i - start1);
+        c->touched_setid = set1;
+        c->touched_lineid = i;
+        if(debug)  printf("HIT\n");
+        return HIT;
+      }
+    }
+
+    for(uns i = start2; i < end2; i++) {
+      MCache_Line *entry = &skew->entries[i];
+      if(entry->valid && (entry->tag == tag)) {
+        // HIT
+        entry->last_access = c->s_count;
+        entry->ripctr = MCACHE_SRRIP_MAX;
+        c->touched_wayid = (i - start2);
+        c->touched_setid = set2;
         c->touched_lineid = i;
         if(debug)  printf("HIT\n");
         return HIT;
@@ -165,11 +185,24 @@ Flag mcache_probe(MCache *c, Addr addr)
 
   for(uns i = 0; i < c->num_skews; i++) {
     MCache_Skew *skew = &c->skews[i];
-    uns set = line_to_set_mapping(addr, skew->key, skew->sets);
-    uns start = set * skew->assocs;
-    uns end = start + skew->assocs;
+    
+    // get lines from set and set + 1
+    uns set1 = line_to_set_mapping(addr, skew->key, skew->sets);
+    uns start1 = set1 * skew->assocs;
+    uns end1 = start1 + skew->assocs;
 
-    for(uns i = start; i < end; i++) {
+    uns set2 = (set1 + 1) % c->skews->sets;
+    uns start2 = set2 * skew->assocs;
+    uns end2 = start2 + skew->assocs;
+
+    for(uns i = start1; i < end1; i++) {
+      MCache_Line *entry = &skew->entries[i];
+      if(entry->valid && (entry->tag == tag)) {
+        return TRUE;
+      }
+    }
+
+    for(uns i = start2; i < end2; i++) {
       MCache_Line *entry = &skew->entries[i];
       if(entry->valid && (entry->tag == tag)) {
         return TRUE;
@@ -186,11 +219,28 @@ Flag mcache_invalidate(MCache *c, Addr addr)
 {
   Addr tag = addr; // full tags
   for(uns i = 0; i < c->num_skews; i++) {
-    uns set = line_to_set_mapping(addr, c->skews[i].key, c->skews[i].sets);
-    uns start = set * c->skews[i].assocs;
-    uns end = start + c->skews[i].assocs;
+    MCache_Skew *skew = &c->skews[i];
 
-    for (uns ii = start; ii < end; ii++)
+    // get lines from set and set + 1
+    uns set1 = line_to_set_mapping(addr, skew->key, skew->sets);
+    uns start1 = set1 * skew->assocs;
+    uns end1 = start1 + skew->assocs;
+
+    uns set2 = (set1 + 1) % c->skews->sets;
+    uns start2 = set2 * skew->assocs;
+    uns end2 = start2 + skew->assocs;
+
+    for (uns ii = start1; ii < end1; ii++)
+    {
+      MCache_Line *entry = &c->skews[i].entries[ii];
+      if (entry->valid && (entry->tag == tag))
+      {
+        entry->valid = FALSE;
+        return TRUE;
+      }
+    }
+
+    for (uns ii = start2; ii < end2; ii++)
     {
       MCache_Line *entry = &c->skews[i].entries[ii];
       if (entry->valid && (entry->tag == tag))
@@ -231,11 +281,28 @@ Flag mcache_mark_dirty(MCache *c, Addr addr)
 {
   Addr tag = addr; // full tags
   for(uns i = 0; i < c->num_skews; i++) {
-    uns set = line_to_set_mapping(addr, c->skews[i].key, c->skews[i].sets);
-    uns start = set * c->skews[i].assocs;
-    uns end = start + c->skews[i].assocs;
+    MCache_Skew *skew = &c->skews[i];
+    
+    // get lines from set and set + 1
+    uns set1 = line_to_set_mapping(addr, skew->key, skew->sets);
+    uns start1 = set1 * skew->assocs;
+    uns end1 = start1 + skew->assocs;
 
-    for (uns ii = start; ii < end; ii++)
+    uns set2 = (set1 + 1) % c->skews->sets;
+    uns start2 = set2 * skew->assocs;
+    uns end2 = start2 + skew->assocs;
+
+    for (uns ii = start1; ii < end1; ii++)
+    {
+      MCache_Line *entry = &c->skews[i].entries[ii];
+      if (entry->valid && (entry->tag == tag))
+      {
+        entry->dirty = TRUE;
+        return TRUE;
+      }
+    }
+
+    for (uns ii = start2; ii < end2; ii++)
     {
       MCache_Line *entry = &c->skews[i].entries[ii];
       if (entry->valid && (entry->tag == tag))
@@ -275,19 +342,23 @@ void mcache_install(MCache *c, Addr addr)
 {
   Addr tag = addr; // full tags
   // uns sets[NUM_SKEWS];
-  MCache_Line *entry = (MCache_Line *)calloc(1, sizeof(MCache_Line));
+  MCache_Line *entry = NULL;
   Flag update_lrubits = TRUE;
+  
+  uns ii = 0;
 
   for(uns i = 0; i < c->num_skews; i++) {
-    uns set = line_to_set_mapping(addr, c->skews[i].key, c->skews[i].sets);
-    uns start = set * c->skews[i].assocs;
-    uns end = start + c->skews[i].assocs;
+    uns set1 = line_to_set_mapping(addr, c->skews[i].key, c->skews[i].sets);
+    uns start1 = set1 * c->skews[i].assocs;
+    uns end1 = start1 + c->skews[i].assocs;
 
-    uns ii;
-    // uns victim;
+    uns set2 = set1 + 1;
+    uns start2 = set2 * c->skews[i].assocs;
+    uns end2 = start2 + c->skews[i].assocs;
 
 
-    for(ii = start; ii < end; ii++) {
+
+    for(ii = start1; ii < end1; ii++) {
       entry = &c->skews[i].entries[ii];
       if(!entry->valid) {
       if(debug) printf("Installing in Skew: %u, Index: %u\n", i, ii);
@@ -295,15 +366,28 @@ void mcache_install(MCache *c, Addr addr)
       }
       if (entry->valid && (entry->tag == tag))
       {
-        if(debug) printf("Installed entry already with addr:%llx present in set:%u\n", addr, set);
+        if(debug) printf("Installed entry already with addr:%llx present in set:%u\n", addr, set1);
         exit(-1);
       }
     }
     if(!entry->valid) break;
+
+    for(ii = start2; ii < end2; ii++) {
+      entry = &c->skews[i].entries[ii];
+      if(!entry->valid) {
+      if(debug) printf("Installing in Skew: %u, Index: %u\n", i, ii);
+        break;
+      }
+      if (entry->valid && (entry->tag == tag))
+      {
+        if(debug) printf("Installed entry already with addr:%llx present in set:%u\n", addr, set2);
+        exit(-1);
+      }
+    }
   }
   // victim = mcache_find_victim(c, set);
   if(entry->valid)
-    entry = mcache_find_victim_skew(c);
+    entry = mcache_find_victim_skew(c, addr);
   // entry = &c->skews[i].entries[victim];
 
   if (entry->valid)
@@ -327,6 +411,7 @@ void mcache_install(MCache *c, Addr addr)
   entry->valid = TRUE;
   entry->dirty = FALSE;
   entry->ripctr = ripctr_val;
+  entry->nID = ii / c->assocs;
 
   if (update_lrubits)
   {
@@ -469,15 +554,15 @@ uns mcache_drrip_get_ripctrval(MCache *c, uns set)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-MCache_Line* mcache_find_victim_skew(MCache *c) {
+MCache_Line* mcache_find_victim_skew(MCache *c, Addr addr) {
   // get random sets from all the skews and find lru out of them
-  MCache_Line *victim = (MCache_Line *)calloc(1, sizeof(MCache_Line));
-  victim->valid = false;
-  uns set_nums[4];
+  MCache_Line *victim = NULL;
+  uns set_nums[8];
   if(debug) printf("Random sets: ");
-  for(uns i = 0; i < c->num_skews; i++) {
-    set_nums[i] = rand() % c->skews[i].sets;
-    if(debug) printf("%u, ", set_nums[i]);
+  for(uns i = 0; i < c->num_skews; i = i + 2) {
+    set_nums[i] = rand() % c->skews[i].sets;    // get line to set mapping
+    set_nums[i + 1] = set_nums[i] + 1;          // get next set number
+    if(debug) printf("%u, %u, ", set_nums[i], set_nums[i + 1]);
   }
   if(debug) printf("\n");
 
@@ -491,7 +576,7 @@ MCache_Line* mcache_find_victim_skew(MCache *c) {
       if(skew->entries[j].valid == false) {
         return &skew->entries[j];
       }
-      if(victim->valid == false) {
+      if(victim == NULL) {
         victim = &skew->entries[j];
       }
       else {
@@ -503,8 +588,221 @@ MCache_Line* mcache_find_victim_skew(MCache *c) {
       }
     }
   }
+
+  // find displacement path for the eviction set
+  get_line_displacement_graph(c, addr, skew_num, index);
+
   if(debug) printf("Victim skew: %u, index: %u\n", skew_num, index);
   return victim;
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns victim_index) {
+
+  // incoming line and pathnode
+  PathNode *incoming_node = (PathNode *)calloc(1, sizeof(PathNode));
+  MCache_Line *incoming_line = (MCache_Line *)calloc(1, sizeof(MCache_Line));
+  incoming_line->tag = addr;
+  incoming_line->dirty = false;
+  incoming_line->valid = true;
+  incoming_line->last_access = c->s_count;
+  incoming_node->line = incoming_line;
+  incoming_node->parent = NULL;   // incoming line parent = NULL
+
+  // add accessed lines to frontier
+  stack<PathNode*> frontier;
+  for(uns i = 0; i < c->num_skews; i++) {
+    int set1 = line_to_set_mapping(addr, c->skews[i].key, c->skews->sets);
+    uns start1 = set1 * c->assocs;
+    uns end1 = start1 + c->assocs;
+    uns set2 = (set1 + 1) % c->skews->sets;
+    uns start2 = set2 * c->assocs;
+    uns end2 = start2 + c->assocs;
+
+    MCache_Skew *skew = &c->skews[i];
+
+    for(uns j = start1; j < end1; j++) {
+      PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
+      MCache_Line *line = &skew->entries[j];
+      node->line = line;
+      node->parent = incoming_node; // parent = incoming node
+      node->skew_num = i;
+      node->set_num = j / c->assocs;
+    }
+
+    for(uns j = start2; j < end2; j++) {
+      PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
+      MCache_Line *line = &skew->entries[j];
+      node->line = line;
+      node->parent = incoming_node; // parent = incoming node
+      node->skew_num = i;
+      node->set_num = j / c->assocs;
+    }
+  }
+
+  uns victim_set = victim_index / c->assocs;
+  unordered_set<uns> vicinity = {(victim_set - 1) % c->skews->sets, (victim_set + 1) % c->skews->sets};
+
+  unordered_set<uns64> visited_lines;
+  const int MAX_DISPLACEMENTS = 16;
+  uns num_displacements = 0;
+
+  // victim node
+  PathNode *victim_node = (PathNode *)calloc(1, sizeof(PathNode));
+  victim_node->line = &c->skews[victim_skew].entries[victim_index];
+  victim_node->skew_num = victim_skew;
+  victim_node->set_num = victim_set;
+
+  bool found_path = false;
+  while(!frontier.empty() && !found_path) {
+    // pop from frontier
+    PathNode *current_node = frontier.top();
+    MCache_Line *current_line = current_node->line;
+    frontier.pop();
+
+    // TODO: IF DISPLACEMENTS > MAX DISPLACEMENTS, COMPLETE THE PATH AND BREAK
+    if(num_displacements >= MAX_DISPLACEMENTS) {
+      victim_node->parent = current_node;
+      found_path = true;
+      c->s_displacement_overflow++;
+      break;
+    }
+
+    /**
+     * TODO: 1) GET SET NUMBER OF THIS LINE IN THE EVICTION SKEW.
+     * 2) IF SET NUMBER IS IN VICINITY, PERFORM VERTICAL MOVES.
+     *    I) PERFORM VERTICAL MOVES: GET LINES FROM SET NUMBER/nID (LINES IN SET_NUM AND SET_NUM + 1) AND SEE IF ANY LINE CAN BE MAPPED TO THE VICTIM SET. IF YES, GRAPH = THIS_LINE => LINE THAT CAN BE MAPPED => VICTIM
+     *    II) IF NONE CAN BE MAPPED, CONTINUE
+     * 3) IF SET NUMBER IF NOT IN VICINITY, GET A RANDOM SKEW AND ADD THE MAPPED LINES TO THE FRONTIER.
+    */
+    if(visited_lines.find(current_line->tag) == visited_lines.end()) {
+      visited_lines.insert(current_line->tag);  // add tag to visited lines
+
+      // get set number of current line in eviction set
+      int set_in_eviction = line_to_set_mapping(current_line->tag, c->skews[victim_skew].key, c->skews->sets);
+
+      if(
+        vicinity.find(set_in_eviction) != vicinity.end()
+        or
+        vicinity.find((set_in_eviction + 1) % c->skews->sets) != vicinity.end()
+      ) {
+        // TODO: PERFORM VERTICAL MOVES
+        
+        MCache_Line *mapped_line = perform_vertical_moves(c, victim_node->line->nID, victim_skew, set_in_eviction);
+
+        if(mapped_line != NULL) {
+          // TODO: FOUND A MAPPED LINE. COMPLETE THE GRAPH
+          PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
+          node->line = mapped_line;
+          node->parent = current_node;
+          victim_node->parent = node;
+          found_path = true;
+          displace_lines(c, victim_node);
+          break;
+        }
+      }
+      else {
+        // get a random skew, add mapped lines to frontier
+        uns rand_skew = random_skew(c->num_skews);
+        uns set1 = line_to_set_mapping(current_line->tag, c->skews[victim_skew].key, c->skews->sets);
+        uns start1 = set1 * c->assocs;
+        uns end1 = start1 + c->assocs;
+        uns set2 = (set1 + 1) % c->skews->sets;
+        uns start2 = set2 * c->assocs;
+        uns end2 = start2 + c->assocs;
+
+        for(uns i = start1; i < end1; i++) {
+          PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
+          node->parent = current_node;
+          node->line = &c->skews[rand_skew].entries[i];
+          frontier.push(node);
+        }
+
+        for(uns i = start2; i < end2; i++) {
+          PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
+          node->parent = current_node;
+          node->line = &c->skews[rand_skew].entries[i];
+          frontier.push(node);
+        }
+      }
+    }
+  }
+
+  // TODO: FREE ALL PATHNODES
+  while(!frontier.empty()) {
+    PathNode *temp = frontier.top();
+    frontier.pop();
+    free(temp);
+  }
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void displace_lines(MCache *c, PathNode *victim_node) {
+  // TODO: SWAP ALL THE LINES IN THE LINE DISPLACEMENT GRAPH, UPDATE NIDS
+
+  PathNode *current_node = victim_node;
+  PathNode *parent_node = current_node->parent;
+  // MCache_Line *current_line = victim_node->line;
+  // MCache_Line *parent_line = parent_node->line;
+
+  /*
+    10 -> 11 -> 12 -> 13 -> 14
+    current_line = current_node->line
+    parent_line = parent_node->line
+    current_line = parent_line;
+    current_line = 13
+    
+  */
+
+  while(parent_node != NULL) {
+    MCache_Line *current_line = current_node->line;
+    MCache_Line *parent_line = parent_node->line;
+
+    // TODO: COPY PARENT LINE CONTENTS INTO CURRENT LINE CONTENTS
+    current_line->dirty = parent_line->dirty;
+    current_line->last_access = parent_line->last_access;
+    current_line->orig_lineaddr = parent_line->orig_lineaddr;
+    current_line->ripctr = parent_line->ripctr;
+    current_line->tag = parent_line->tag;
+    current_line->valid = parent_line->valid;
+
+    // TODO: UPDATE CURRENT AND PARENT NODE
+    current_node = parent_node;
+    parent_node = parent_node->parent;
+  }
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+MCache_Line* perform_vertical_moves(MCache *c, uns victim_nID, uns victim_skew, uns mapped_set) {
+  // TODO: GET LINES FROM MAPPED SET, MAPPED SET + 1. SEE IF ANY OF THESE LINES CAN BE SHIFTED TO THE VICTIM SET (BY CHECKING IF THEIR NID = NID OF VICTIM)
+
+  MCache_Skew *skew = &c->skews[victim_skew];
+
+  uns start1 = mapped_set * c->assocs;
+  uns end1 = start1 + c->assocs;
+
+  uns start2 = (((mapped_set + 1) * c->assocs) % c->skews->sets) * c->assocs;
+  uns end2 = start2 + c->assocs;
+
+  for(uns i = start1; i < end1; i++) {
+    if(skew->entries[i].nID == victim_nID) {
+      return &skew->entries[i];
+    }
+  }
+
+  for(uns i = start2; i < end2; i++) {
+    if(skew->entries[i].nID == victim_nID) {
+      return &skew->entries[i];
+    }
+  }
+
+  return NULL;
 }
 
 ////////////////////////////////////////////////////////////
@@ -513,11 +811,23 @@ MCache_Line* mcache_find_victim_skew(MCache *c) {
 uns mcache_find_victim(MCache *c, uns set)
 {
   int ii;
-  int start = set * c->assocs;
-  int end = start + c->assocs;
+  int start1 = set * c->assocs;
+  int end1 = start1 + c->assocs;
+
+  int start2 = ((set + 1) % c->skews->sets) * c->assocs;
+  int end2 = start2 + c->assocs;
 
   // search for invalid first
-  for (ii = start; ii < end; ii++)
+  for (ii = start1; ii < end1; ii++)
+  {
+    if (!c->entries[ii].valid)
+    {
+      return ii;
+    }
+  }
+
+  // search for invalid first
+  for (ii = start2; ii < end2; ii++)
   {
     if (!c->entries[ii].valid)
     {
@@ -636,8 +946,10 @@ void mcache_print_stats(MCache *c, char *header)
 {
   double missrate = 100.0 * (double)c->s_miss / (double)c->s_count;
 
-  printf("\n%s_ACCESS       \t : %llu", header, c->s_count);
-  printf("\n%s_MISS         \t : %llu", header, c->s_miss);
-  printf("\n%s_MISSRATE     \t : %6.3f", header, missrate);
+  printf("\n%s_ACCESS                 \t : %llu", header, c->s_count);
+  printf("\n%s_MISS                   \t : %llu", header, c->s_miss);
+  printf("\n%s_MISSRATE               \t : %6.3f", header, missrate);
+  printf("\n%s_SAE                    \t : %llu", header, c->s_sae);
+  printf("\n%s_DISPLACEMENT_OVERFLOW  \t : %llu", header, c->s_displacement_overflow);
   printf("\n");
 }
