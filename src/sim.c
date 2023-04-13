@@ -67,6 +67,7 @@ void print_dots()
     }
     else{
 	printf(".");
+  printf("\n%llu\n", cycle);
 	fflush(stdout);
     }
     

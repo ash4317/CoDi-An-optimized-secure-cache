@@ -87,6 +87,7 @@ void mcache_select_leader_sets(MCache *c, uns sets)
 
 Flag mcache_access(MCache *c, Addr addr)
 {
+  // printf("Count: %llu, Displacement Overflow: %llu\n", c->s_count, c->s_displacement_overflow);
   Addr tag = addr; // full tags
   // uns set = mcache_get_index(c, addr);
   if(debug) printf("Accessing addr: %llu, ", addr);
@@ -630,6 +631,7 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
       node->parent = incoming_node; // parent = incoming node
       node->skew_num = i;
       node->set_num = j / c->assocs;
+      frontier.push(node);
     }
 
     for(uns j = start2; j < end2; j++) {
@@ -639,6 +641,7 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
       node->parent = incoming_node; // parent = incoming node
       node->skew_num = i;
       node->set_num = j / c->assocs;
+      frontier.push(node);
     }
   }
 
@@ -678,6 +681,7 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
      * 3) IF SET NUMBER IF NOT IN VICINITY, GET A RANDOM SKEW AND ADD THE MAPPED LINES TO THE FRONTIER.
     */
     if(visited_lines.find(current_line->tag) == visited_lines.end()) {
+      num_displacements++;
       visited_lines.insert(current_line->tag);  // add tag to visited lines
 
       // get set number of current line in eviction set

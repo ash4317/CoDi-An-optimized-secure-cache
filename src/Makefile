@@ -9,7 +9,8 @@ PFLAGS    := -pg
 
 
 all:  folders traces
-	${CC} ${CFLAGS} dram.c util.cpp  mgries.c cra_ctr.c ctrcache.c scoreboard.c mcore.c os.c mcache.cpp sim.c memsys.c hash_lib.c malloc_lib.c -o ${SIM} -lz -lm -lcrypto -lssl
+	${CC} ${CFLAGS} dram.c util.cpp  mgries.c cra_ctr.c ctrcache.c scoreboard.c mcore.c os.c mcache.cpp sim.c memsys.c hash_lib.c malloc_lib.c -o ${SIM} -lz -lm -lcrypto
+# -lssl
 
 folders:
 	mkdir -p ../RESULTS
