@@ -69,7 +69,7 @@ struct OS {
 
 OS*     os_new(uns num_pages, uns num_threads);
 uns     os_vpn_to_pfn(OS *os, uns vpn, uns tid, Flag *hit);
-void    os_print_stats(OS *os);
+void    os_print_stats(OS *os, FILE *fptr=stdout);
 
 uns     os_get_victim_from_ipt(OS *os);
 Addr    os_v2p_lineaddr(OS *os, Addr lineaddr, uns tid);

@@ -721,6 +721,8 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
           PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
           node->parent = current_node;
           node->line = &c->skews[rand_skew].entries[i];
+          node->set_num = set1;
+          node->skew_num = rand_skew;
           frontier.push(node);
         }
 
@@ -728,6 +730,8 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
           PathNode *node = (PathNode *)calloc(1, sizeof(PathNode));
           node->parent = current_node;
           node->line = &c->skews[rand_skew].entries[i];
+          node->set_num = set2;
+          node->skew_num = rand_skew;
           frontier.push(node);
         }
       }
@@ -750,17 +754,6 @@ void displace_lines(MCache *c, PathNode *victim_node) {
 
   PathNode *current_node = victim_node;
   PathNode *parent_node = current_node->parent;
-  // MCache_Line *current_line = victim_node->line;
-  // MCache_Line *parent_line = parent_node->line;
-
-  /*
-    10 -> 11 -> 12 -> 13 -> 14
-    current_line = current_node->line
-    parent_line = parent_node->line
-    current_line = parent_line;
-    current_line = 13
-    
-  */
 
   while(parent_node != NULL) {
     MCache_Line *current_line = current_node->line;
@@ -774,9 +767,24 @@ void displace_lines(MCache *c, PathNode *victim_node) {
     current_line->tag = parent_line->tag;
     current_line->valid = parent_line->valid;
 
+    if(parent_node->parent == NULL) {
+      // TODO: SET THE SET AND SKEW NUMBER FO THE INCOMING LINE
+      parent_node->set_num = current_node->set_num;
+      parent_node->skew_num = current_node->skew_num;
+    }
+
     // TODO: UPDATE CURRENT AND PARENT NODE
     current_node = parent_node;
     parent_node = parent_node->parent;
+  }
+
+  // TODO: IF INCOMING LINE AND VICTIM LINE HAVE SAME SKEW AND SET, INCREMENT SAE COUNTER
+  if(
+    current_node->skew_num == victim_node->skew_num
+    &&
+    current_node->set_num == victim_node->set_num
+  ) {
+    c->s_sae++;
   }
 }
 
@@ -946,14 +954,14 @@ uns mcache_get_index(MCache *c, Addr addr)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void mcache_print_stats(MCache *c, char *header)
+void mcache_print_stats(MCache *c, char *header, FILE *fptr)
 {
   double missrate = 100.0 * (double)c->s_miss / (double)c->s_count;
 
-  printf("\n%s_ACCESS                 \t : %llu", header, c->s_count);
-  printf("\n%s_MISS                   \t : %llu", header, c->s_miss);
-  printf("\n%s_MISSRATE               \t : %6.3f", header, missrate);
-  printf("\n%s_SAE                    \t : %llu", header, c->s_sae);
-  printf("\n%s_DISPLACEMENT_OVERFLOW  \t : %llu", header, c->s_displacement_overflow);
-  printf("\n");
+  fprintf(fptr, "\n%s_ACCESS                 \t : %llu", header, c->s_count);
+  fprintf(fptr, "\n%s_MISS                   \t : %llu", header, c->s_miss);
+  fprintf(fptr, "\n%s_MISSRATE               \t : %6.3f", header, missrate);
+  fprintf(fptr, "\n%s_SAE                    \t : %llu", header, c->s_sae);
+  fprintf(fptr, "\n%s_DISPLACEMENT_OVERFLOW  \t : %llu", header, c->s_displacement_overflow);
+  fprintf(fptr, "\n");
 }

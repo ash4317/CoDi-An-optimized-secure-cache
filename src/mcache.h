@@ -103,7 +103,7 @@ void    mcache_select_leader_sets   (MCache *c,uns sets);
 uns     mcache_drrip_get_ripctrval  (MCache *c, uns set);
 Flag    mcache_dip_check_lru_update (MCache *c, uns set);
 
-void    mcache_print_stats          (MCache *c, char *header);
+void    mcache_print_stats          (MCache *c, char *header, FILE *fptr=stdout);
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 

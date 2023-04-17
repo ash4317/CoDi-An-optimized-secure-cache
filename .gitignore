@@ -1,6 +1,7 @@
 src/*txt
 src/.vscode/
 src/sim
-RESULTS/*
+RESULTS/
 src/copy.sh
 src/test.cpp
+src/*.res

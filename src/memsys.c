@@ -5,7 +5,6 @@
 #include <math.h>
 
 #include "externs.h"
-#include "memsys.h"
 #include "mcore.h"
 
 
@@ -73,7 +72,7 @@ uns64 memsys_access(MemSys *m, Addr lineaddr,  uns tid, uns64 in_cycle){
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void memsys_print_stats(MemSys *m)
+void memsys_print_stats(MemSys *m, FILE *fptr)
 {
     char header[256];
     sprintf(header, "MSYS");
@@ -83,20 +82,12 @@ void memsys_print_stats(MemSys *m)
       avg_delay=m->s_totdelaysum/m->s_totaccess;
     }
 
-    dram_print_stats(m->mainmem);
+    dram_print_stats(m->mainmem, fptr);
 
-    printf("\n%s_TOT_ACCESS      \t : %llu",    header, m->s_totaccess);
-    printf("\n%s_AVG_DELAY       \t : %llu",    header, avg_delay);
-    printf("\n%s_RH_TOT_MITIGATE \t : %llu",    header, m->s_tot_mitigate);
-    printf("\n");
-    
-    if(m->mgries_t)
-      for(uns i=0; i< m->mainmem->num_banks; i++){
-	mgries_print_stats(m->mgries_t[i]);
-      }
-
-    if(m->cra_t)
-      cra_ctr_print_stats(m->cra_t);
+    fprintf(fptr, "\n%s_TOT_ACCESS      \t : %llu",    header, m->s_totaccess);
+    fprintf(fptr, "\n%s_AVG_DELAY       \t : %llu",    header, avg_delay);
+    fprintf(fptr, "\n%s_RH_TOT_MITIGATE \t : %llu",    header, m->s_tot_mitigate);
+    fprintf(fptr, "\n");
 }
 
 

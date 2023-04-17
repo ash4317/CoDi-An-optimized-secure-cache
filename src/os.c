@@ -137,14 +137,14 @@ uns    os_get_victim_from_ipt(OS *os)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void os_print_stats(OS *os)
+void os_print_stats(OS *os, FILE *fptr)
 {
     char header[256];
     sprintf(header, "OS");
         
-    printf("\n%s_PAGE_MISS       \t : %llu",  header, os->pt->miss_count);
-    printf("\n%s_PAGE_EVICTS     \t : %llu",  header, os->pt->total_evicts);
-    printf("\n");
+    fprintf(fptr, "\n%s_PAGE_MISS       \t : %llu",  header, os->pt->miss_count);
+    fprintf(fptr, "\n%s_PAGE_EVICTS     \t : %llu",  header, os->pt->total_evicts);
+    fprintf(fptr, "\n");
 
 }
 

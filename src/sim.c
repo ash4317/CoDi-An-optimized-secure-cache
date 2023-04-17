@@ -31,6 +31,21 @@ MCore       *mcore[MAX_THREADS];
  * Functions
  ***************************************************************************************/
 
+void print_stats() {
+  FILE *fptr = fopen("simulation.res", "w");
+
+  mcache_print_stats(LLC, (char*) "L3CACHE", fptr);
+  memsys_print_stats(memsys, fptr);
+
+  os_print_stats(os, fptr);
+
+  fprintf(fptr, "\nSYS_CYCLES      \t : %llu", cycle);
+  // printf("\nAVG_CORE_CYCLES \t : %llu", avg_done_cycles);
+
+  fprintf(fptr, "\n\n\n");
+  fclose(fptr);
+}
+
 void print_dots()
 {
   uns ii;
@@ -66,12 +81,15 @@ void print_dots()
 	fflush(stdout);
     }
     else{
-	printf(".");
+	// printf(".");
   printf("\n%llu\n", cycle);
+  print_stats();
 	fflush(stdout);
     }
     
 }
+
+
 
 
 /***************************************************************************************

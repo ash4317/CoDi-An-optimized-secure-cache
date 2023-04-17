@@ -164,7 +164,7 @@ void   dram_closepage(DRAM *d, Addr lineaddr, uns64 in_cycle){
 ////////////////////////////////////////////////////////////
 
 
-void dram_print_stats(DRAM *d){
+void dram_print_stats(DRAM *d, FILE *fptr){
   char   header[256];
   uns64  totaccess=0;
   uns64  totdelaysum=0;
@@ -202,15 +202,15 @@ void dram_print_stats(DRAM *d){
 
   sprintf(header, "%s", d->name);
   
-  printf("\n%s_TOTACCESS        \t : %llu",    header, totaccess);
-  printf("\n%s_TOTDELAYAVG      \t : %llu",    header, avgdelaysum);
-  printf("\n%s_RDACCESS         \t : %llu",    header, d->s_access_type[DRAM_REQ_RD]);
-  printf("\n%s_RDDELAYAVG       \t : %5.2f",   header, avg_rd_delay);
-  printf("\n%s_RDWAITAVG        \t : %5.2f",   header, avg_rd_wait);
-  printf("\n%s_RD_RBUF_HITPERC  \t : %5.2f",   header, rd_rbuf_hitperc);
-  printf("\n%s_RD_RBUF_EMPTYPERC\t : %5.2f",   header, rd_rbuf_emptyperc);
-  printf("\n%s_RD_RBUF_CONFLPERC\t : %5.2f",   header, rd_rbuf_conflictperc);
-  printf("\n%s_TOTAL_ACT        \t : %llu",    header, totACT);
+  fprintf(fptr, "\n%s_TOTACCESS        \t : %llu",    header, totaccess);
+  fprintf(fptr, "\n%s_TOTDELAYAVG      \t : %llu",    header, avgdelaysum);
+  fprintf(fptr, "\n%s_RDACCESS         \t : %llu",    header, d->s_access_type[DRAM_REQ_RD]);
+  fprintf(fptr, "\n%s_RDDELAYAVG       \t : %5.2f",   header, avg_rd_delay);
+  fprintf(fptr, "\n%s_RDWAITAVG        \t : %5.2f",   header, avg_rd_wait);
+  fprintf(fptr, "\n%s_RD_RBUF_HITPERC  \t : %5.2f",   header, rd_rbuf_hitperc);
+  fprintf(fptr, "\n%s_RD_RBUF_EMPTYPERC\t : %5.2f",   header, rd_rbuf_emptyperc);
+  fprintf(fptr, "\n%s_RD_RBUF_CONFLPERC\t : %5.2f",   header, rd_rbuf_conflictperc);
+  fprintf(fptr, "\n%s_TOTAL_ACT        \t : %llu",    header, totACT);
 
   
   printf("\n");
