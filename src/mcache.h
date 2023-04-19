@@ -34,6 +34,8 @@ struct MCache_Line {
     uns64   last_access;      // timestamp
     Addr    orig_lineaddr;
     uns     nID;              // neighbourhood ID
+    uns     orig_set;         // set to which the line was first mapped to during install
+    uns     orig_skew;        // skew to which the line was first mapped to during install
 };
 
 /**
@@ -69,6 +71,7 @@ struct MCache{
   uns64 s_miss; // number of misses
   uns64 s_evict; // number of evictions
   uns64 s_sae;
+  uns64 s_same_set_eviction;
   uns64 s_displacement_overflow;
 };
 
