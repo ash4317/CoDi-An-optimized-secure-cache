@@ -346,9 +346,9 @@ void mcache_install(MCache *c, Addr addr)
   MCache_Line *entry = NULL;
   Flag update_lrubits = TRUE;
   
-  uns ii = 0, i = 0;
+  uns ii = 0, skew_num = 0;
 
-  for(i = 0; i < c->num_skews; i++) {
+  for(uns i = 0; i < c->num_skews; i++) {
     uns set1 = line_to_set_mapping(addr, c->skews[i].key, c->skews[i].sets);
     uns start1 = set1 * c->skews[i].assocs;
     uns end1 = start1 + c->skews[i].assocs;
@@ -418,7 +418,7 @@ void mcache_install(MCache *c, Addr addr)
   entry->ripctr = ripctr_val;
   entry->nID = ii / c->assocs;
   entry->orig_set = entry->nID;
-  entry->orig_skew = i;
+  entry->orig_skew = skew_num;
 
   if (update_lrubits)
   {
