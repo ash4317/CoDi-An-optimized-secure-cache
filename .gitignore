@@ -1,7 +1,7 @@
-src/*txt
 src/sim
 RESULTS/
 src/copy.sh
 src/test.cpp
 src/*.res
 src/.vscode/
+src/*.txt

@@ -93,7 +93,7 @@ uns     mcache_get_index            (MCache *c, Addr addr);
 
 uns     mcache_find_victim          (MCache *c, uns set);
 MCache_Line* mcache_find_victim_skew(MCache *c, Addr addr);
-void get_line_displacement_graph    (MCache *c, Addr addr, uns victim_skew, uns victim_index);
+void get_line_displacement_graph(MCache *c, Addr addr, uns *lru_lines);
 uns     mcache_find_victim_lru      (MCache *c, uns set);
 uns     mcache_find_victim_rnd      (MCache *c, uns set);
 void    displace_lines              (MCache *c, PathNode *victim_node);
