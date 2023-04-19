@@ -1047,6 +1047,8 @@ void mcache_print_stats(MCache *c, char *header, FILE *fptr)
   fprintf(fptr, "\n%s_ACCESS                 \t : %llu", header, c->s_count);
   fprintf(fptr, "\n%s_MISS                   \t : %llu", header, c->s_miss);
   fprintf(fptr, "\n%s_MISSRATE               \t : %6.3f", header, missrate);
+  fprintf(fptr, "\n%s_EVICTIONS              \t : %llu", header, c->s_evict);
+  fprintf(fptr, "\n%s_SAME_SET_EVICTIONS     \t : %llu", header, c->s_same_set_eviction);
   fprintf(fptr, "\n%s_SAE                    \t : %llu", header, c->s_sae);
   fprintf(fptr, "\n%s_DISPLACEMENT_OVERFLOW  \t : %llu", header, c->s_displacement_overflow);
   fprintf(fptr, "\n");
