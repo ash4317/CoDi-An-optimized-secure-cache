@@ -346,9 +346,9 @@ void mcache_install(MCache *c, Addr addr)
   MCache_Line *entry = NULL;
   Flag update_lrubits = TRUE;
   
-  uns ii = 0;
+  uns ii = 0, i = 0;
 
-  for(uns i = 0; i < c->num_skews; i++) {
+  for(i = 0; i < c->num_skews; i++) {
     uns set1 = line_to_set_mapping(addr, c->skews[i].key, c->skews[i].sets);
     uns start1 = set1 * c->skews[i].assocs;
     uns end1 = start1 + c->skews[i].assocs;
@@ -413,6 +413,8 @@ void mcache_install(MCache *c, Addr addr)
   entry->dirty = FALSE;
   entry->ripctr = ripctr_val;
   entry->nID = ii / c->assocs;
+  entry->orig_set = entry->nID;
+  entry->orig_skew = i;
 
   if (update_lrubits)
   {
@@ -784,7 +786,14 @@ void displace_lines(MCache *c, PathNode *victim_node) {
     &&
     current_node->set_num == victim_node->set_num
   ) {
-    c->s_sae++;
+    c->s_same_set_eviction++;
+    if(
+      current_node->line->orig_skew == victim_node->line->orig_skew
+      &&
+      current_node->line->orig_set == victim_node->line->orig_set
+    ) {
+      c->s_sae++;
+    }
   }
 }
 
@@ -961,6 +970,8 @@ void mcache_print_stats(MCache *c, char *header, FILE *fptr)
   fprintf(fptr, "\n%s_ACCESS                 \t : %llu", header, c->s_count);
   fprintf(fptr, "\n%s_MISS                   \t : %llu", header, c->s_miss);
   fprintf(fptr, "\n%s_MISSRATE               \t : %6.3f", header, missrate);
+  fprintf(fptr, "\n%s_EVICTIONS              \t : %llu", header, c->s_evict);
+  fprintf(fptr, "\n%s_SAME_SET_EVICTIONS     \t : %llu", header, c->s_same_set_eviction);
   fprintf(fptr, "\n%s_SAE                    \t : %llu", header, c->s_sae);
   fprintf(fptr, "\n%s_DISPLACEMENT_OVERFLOW  \t : %llu", header, c->s_displacement_overflow);
   fprintf(fptr, "\n");
