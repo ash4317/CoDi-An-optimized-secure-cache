@@ -32,7 +32,7 @@ MCore       *mcore[MAX_THREADS];
  ***************************************************************************************/
 
 void print_stats() {
-  FILE *fptr = fopen("simulation.res", "w");
+  FILE *fptr = fopen("simulation_oneVictim.res", "w");
 
   mcache_print_stats(LLC, (char*) "L3CACHE", fptr);
   memsys_print_stats(memsys, fptr);

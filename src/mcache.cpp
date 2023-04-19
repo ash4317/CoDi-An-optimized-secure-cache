@@ -354,7 +354,7 @@ void mcache_install(MCache *c, Addr addr)
     uns start1 = set1 * c->skews[i].assocs;
     uns end1 = start1 + c->skews[i].assocs;
 
-    uns set2 = set1 + 1;
+    uns set2 = (set1 + 1) % c->skews[i].sets;
     uns start2 = set2 * c->skews[i].assocs;
     uns end2 = start2 + c->skews[i].assocs;
 
@@ -363,9 +363,9 @@ void mcache_install(MCache *c, Addr addr)
     for(ii = start1; ii < end1; ii++) {
       entry = &c->skews[i].entries[ii];
       if(!entry->valid) {
-      if(debug) printf("Installing in Skew: %u, Index: %u\n", i, ii);
-        break;
-      }
+        if(debug) printf("Installing in Skew: %u, Index: %u\n", i, ii);
+          break;
+        }
       if (entry->valid && (entry->tag == tag))
       {
         if(debug) printf("Installed entry already with addr:%llx present in set:%u\n", addr, set1);
@@ -377,9 +377,9 @@ void mcache_install(MCache *c, Addr addr)
     for(ii = start2; ii < end2; ii++) {
       entry = &c->skews[i].entries[ii];
       if(!entry->valid) {
-      if(debug) printf("Installing in Skew: %u, Index: %u\n", i, ii);
-        break;
-      }
+        if(debug) printf("Installing in Skew: %u, Index: %u\n", i, ii);
+          break;
+        }
       if (entry->valid && (entry->tag == tag))
       {
         if(debug) printf("Installed entry already with addr:%llx present in set:%u\n", addr, set2);
