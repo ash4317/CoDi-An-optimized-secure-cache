@@ -670,7 +670,27 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
 
     // TODO: IF DISPLACEMENTS > MAX DISPLACEMENTS, COMPLETE THE PATH AND BREAK
     if(num_displacements >= MAX_DISPLACEMENTS) {
+      int rand_skew = random_skew(c->num_skews);
+      int set = line_to_set_mapping(current_line->tag, c->skews[rand_skew].key, c->skews->sets);
+
+      uns start = set * c->assocs;
+      uns end = start + c->assocs;
+
+      MCache_Line *invalid_line = NULL;
+
+      for(uns i = start; i < end; i++) {
+        if(invalid_line == NULL) {
+          invalid_line = &c->skews[rand_skew].entries[i];
+        }
+        else {
+          if(c->skews[rand_skew].entries[i].last_access < invalid_line->last_access) {
+            invalid_line = &c->skews[rand_skew].entries[i];
+          }
+        }
+      }
+
       victim_node->parent = current_node;
+      victim_node->line = invalid_line;
       found_path = true;
       c->s_displacement_overflow++;
       break;
@@ -696,7 +716,6 @@ void get_line_displacement_graph(MCache *c, Addr addr, uns victim_skew, uns vict
         vicinity.find((set_in_eviction + 1) % c->skews->sets) != vicinity.end()
       ) {
         // TODO: PERFORM VERTICAL MOVES
-        
         MCache_Line *mapped_line = perform_vertical_moves(c, victim_node->line->nID, victim_skew, set_in_eviction);
 
         if(mapped_line != NULL) {
