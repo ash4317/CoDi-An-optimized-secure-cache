@@ -43,3 +43,32 @@ int random_skew(int num_skews) {
     uniform_int_distribution<int> distr(range_from, range_to);
     return distr(generator);
 }
+
+int partition(vector<int>& arr, int left, int right, int pivotIndex) {
+    int pivotValue = arr[pivotIndex];
+    swap(arr[pivotIndex], arr[right]);
+    int storeIndex = left;
+    for (int i = left; i < right; i++) {
+        if (arr[i] < pivotValue) {
+            swap(arr[i], arr[storeIndex]);
+            storeIndex++;
+        }
+    }
+    swap(arr[storeIndex], arr[right]);
+    return storeIndex;
+}
+
+int func(vector<int>& arr, int left, int right, int k) {
+    if (left == right) {
+        return arr[left];
+    }
+    int pivotIndex = left + rand() % (right - left + 1);
+    pivotIndex = partition(arr, left, right, pivotIndex);
+    if (k == pivotIndex) {
+        return arr[k];
+    } else if (k < pivotIndex) {
+        return func(arr, left, pivotIndex - 1, k);
+    } else {
+        return func(arr, pivotIndex + 1, right, k);
+    }
+}

@@ -32,7 +32,7 @@ MCore       *mcore[MAX_THREADS];
  ***************************************************************************************/
 
 void print_stats() {
-  FILE *fptr = fopen("simulation.res", "w");
+  FILE *fptr = fopen("bwaves_10.res", "w");
 
   mcache_print_stats(LLC, (char*) "L3CACHE", fptr);
   memsys_print_stats(memsys, fptr);
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
   uns l3sets = (L3_SIZE_KB*1024)/(L3_ASSOC*LINESIZE*NUM_SKEWS);
 
   memsys = memsys_new(NUM_THREADS, RH_THRESHOLD_ACT);
-  LLC = mcache_new(NUM_SKEWS, l3sets, L3_ASSOC, L3_REPL);
+  LLC = mcache_new(NUM_SKEWS, l3sets, L3_ASSOC, L3_REPL, VICTIM_PERCENT);
 
   for(ii=0; ii<num_threads; ii++){
     mcore[ii] = mcore_new( memsys, os, LLC, addr_trace_filename[ii], ii);
@@ -179,9 +179,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-
-
-
-
-

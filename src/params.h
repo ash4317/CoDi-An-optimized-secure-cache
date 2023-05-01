@@ -23,6 +23,7 @@ uns64       L3_LATENCY      = 24; // cycles
 uns64       L3_REPL         = 0; //0:LRU 1:RND 2:SRRIP
 uns64       L3_PERFECT      = 0; //simulate 100% hit rate for L3
 uns 		NUM_SKEWS		= 4;
+uns 		VICTIM_PERCENT	= 10;
 
 
 uns64       MEM_SIZE_MB     = 16384; 
